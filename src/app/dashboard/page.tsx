@@ -4,8 +4,9 @@ import { useSession, signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { redirect } from 'next/navigation';
 import { DashboardStats } from '@/types';
-import { formatCurrency, getCurrentBillingMonth } from '@/lib/utils';
+import { formatCurrency, getCurrentBillingMonthDisplay } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
   const response = await fetch('/api/dashboard/stats');
@@ -36,7 +37,7 @@ export default function DashboardPage() {
     redirect('/auth/login');
   }
 
-  const currentMonth = getCurrentBillingMonth();
+  const currentMonth = getCurrentBillingMonthDisplay();
 
   if (isLoading) {
     return (
@@ -53,9 +54,15 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
-              </div>
+              <Image
+                src="/logo1.png"
+                alt="Linkup Communications"
+                width={300}
+                height={138}
+                className="h-8 w-auto mr-3"
+                priority
+                unoptimized
+              />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
                 <p className="text-sm text-gray-600">Welcome back, {session.user.name}</p>

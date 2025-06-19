@@ -67,6 +67,7 @@ export interface PaymentFormData {
   status: 'paid' | 'pending' | 'overdue';
   billingMonth: string;
   paymentMethod: 'cash' | 'mobile_banking' | 'bank_transfer';
+  paymentDate: string;
   notes?: string;
 }
 

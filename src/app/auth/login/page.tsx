@@ -5,6 +5,7 @@ import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { z } from 'zod';
+import Image from 'next/image';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -69,14 +70,17 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">LC</span>
-          </div>
+          <Image
+            src="/logo1.png"
+            alt="Linkup Communications"
+            width={300}
+            height={138}
+            className="h-24 w-auto"
+            priority
+            unoptimized
+          />
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Linkup Communications
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-gray-600">
           Billing Management System
         </p>
       </div>
@@ -132,16 +136,6 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="text-center">
-              <p className="text-xs text-gray-500">
-                Demo accounts:<br />
-                Admin: admin@linkup.com / admin123<br />
-                Staff: staff@linkup.com / staff123
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

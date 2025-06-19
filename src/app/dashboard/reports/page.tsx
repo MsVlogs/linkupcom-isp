@@ -6,6 +6,33 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
 import { StaffPerformance } from '@/types';
+import Image from 'next/image';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  LineElement,
+  PointElement,
+} from 'chart.js';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  LineElement,
+  PointElement
+);
 
 interface ReportData {
   overview?: {
@@ -18,7 +45,8 @@ interface ReportData {
     _id: string;
     amount: number;
     createdAt: string;
-    customerId?: { name?: string };
+    customerId: string;
+    customerName: string;
   }>;
   revenueByMonth?: Array<{
     _id: { year: number; month: number };
@@ -114,8 +142,15 @@ export default function ReportsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/dashboard" className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
+              <Link href="/dashboard" className="flex items-center mr-3">
+                <Image
+                  src="/logo1.png"
+                  alt="Linkup Communications"
+                  width={300}
+                  height={138}
+                  className="h-8 w-auto"
+                  unoptimized
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
@@ -252,7 +287,7 @@ export default function ReportsPage() {
                         {data.recentPayments.slice(0, 10).map((payment) => (
                           <tr key={payment._id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {payment.customerId?.name || 'Unknown'}
+                              {payment.customerName || 'Unknown'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {formatCurrency(payment.amount)}
@@ -272,73 +307,456 @@ export default function ReportsPage() {
 
           {/* Revenue Report */}
           {reportType === 'revenue' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {data?.revenueByMonth && (
+            <div className="space-y-6">
+              {/* Revenue by Month Chart */}
+              {data?.revenueByMonth && data.revenueByMonth.length > 0 && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue by Month</h3>
-                  <div className="space-y-3">
-                    {data.revenueByMonth.map((item) => (
-                      <div key={`${item._id.year}-${item._id.month}`} className="flex justify-between">
-                        <span className="text-sm text-gray-600">
-                          {new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { 
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue Trends</h3>
+                  <div className="h-80">
+                    <Line
+                      data={{
+                        labels: data.revenueByMonth.map(item => 
+                          new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { 
                             year: 'numeric', 
-                            month: 'long' 
-                          })}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {formatCurrency(item.revenue)} ({item.count} payments)
-                        </span>
-                      </div>
-                    ))}
+                            month: 'short' 
+                          })
+                        ),
+                        datasets: [{
+                          label: 'Monthly Revenue',
+                          data: data.revenueByMonth.map(item => item.revenue),
+                          borderColor: 'rgb(45, 212, 191)',
+                          backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                          tension: 0.1,
+                          fill: true,
+                        }]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          },
+                          title: {
+                            display: false,
+                          },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: {
+                              callback: function(value) {
+                                return '৳' + value.toLocaleString();
+                              }
+                            }
+                          }
+                        }
+                      }}
+                    />
                   </div>
                 </div>
               )}
 
-              {data?.revenueByPlan && (
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue by Plan</h3>
-                  <div className="space-y-3">
-                    {data.revenueByPlan.map((item) => (
-                      <div key={item._id} className="flex justify-between">
-                        <span className="text-sm text-gray-600">{item._id}</span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {formatCurrency(item.revenue)} ({item.count} payments)
-                        </span>
-                      </div>
-                    ))}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Revenue by Month Table */}
+                {data?.revenueByMonth && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue by Month</h3>
+                    <div className="space-y-3">
+                      {data.revenueByMonth.map((item) => (
+                        <div key={`${item._id.year}-${item._id.month}`} className="flex justify-between">
+                          <span className="text-sm text-gray-600">
+                            {new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long' 
+                            })}
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatCurrency(item.revenue)} ({item.count} payments)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Revenue by Plan Chart */}
+                {data?.revenueByPlan && data.revenueByPlan.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue by Plan</h3>
+                    <div className="h-64">
+                      <Pie
+                        data={{
+                          labels: data.revenueByPlan.map(item => item._id),
+                          datasets: [{
+                            data: data.revenueByPlan.map(item => item.revenue),
+                            backgroundColor: [
+                              'rgba(45, 212, 191, 0.8)',
+                              'rgba(59, 130, 246, 0.8)',
+                              'rgba(139, 92, 246, 0.8)',
+                              'rgba(236, 72, 153, 0.8)',
+                              'rgba(251, 146, 60, 0.8)',
+                              'rgba(34, 197, 94, 0.8)',
+                            ],
+                            borderColor: [
+                              'rgb(45, 212, 191)',
+                              'rgb(59, 130, 246)',
+                              'rgb(139, 92, 246)',
+                              'rgb(236, 72, 153)',
+                              'rgb(251, 146, 60)',
+                              'rgb(34, 197, 94)',
+                            ],
+                            borderWidth: 2,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom' as const,
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  return context.label + ': ৳' + context.parsed.toLocaleString();
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Customer Status Report */}
           {reportType === 'customer-status' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {data?.statusCounts && (
+            <div className="space-y-6">
+              {/* Customer Status Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {data?.statusCounts && data.statusCounts.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Status Distribution</h3>
+                    <div className="h-64">
+                      <Pie
+                        data={{
+                          labels: data.statusCounts.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1)),
+                          datasets: [{
+                            data: data.statusCounts.map(item => item.count),
+                            backgroundColor: [
+                              'rgba(34, 197, 94, 0.8)',
+                              'rgba(239, 68, 68, 0.8)',
+                              'rgba(59, 130, 246, 0.8)',
+                            ],
+                            borderColor: [
+                              'rgb(34, 197, 94)',
+                              'rgb(239, 68, 68)',
+                              'rgb(59, 130, 246)',
+                            ],
+                            borderWidth: 2,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom' as const,
+                            },
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {data?.planCounts && data.planCounts.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Customers by Plan</h3>
+                    <div className="h-64">
+                      <Bar
+                        data={{
+                          labels: data.planCounts.map(item => item._id),
+                          datasets: [{
+                            label: 'Number of Customers',
+                            data: data.planCounts.map(item => item.count),
+                            backgroundColor: 'rgba(45, 212, 191, 0.8)',
+                            borderColor: 'rgb(45, 212, 191)',
+                            borderWidth: 2,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Data Tables */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {data?.statusCounts && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Status</h3>
+                    <div className="space-y-3">
+                      {data.statusCounts.map((item) => (
+                        <div key={item._id} className="flex justify-between">
+                          <span className="text-sm text-gray-600 capitalize">{item._id}</span>
+                          <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {data?.planCounts && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Customers by Plan</h3>
+                    <div className="space-y-3">
+                      {data.planCounts.map((item) => (
+                        <div key={item._id} className="flex justify-between">
+                          <span className="text-sm text-gray-600">{item._id}</span>
+                          <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Trends Report */}
+          {reportType === 'payment-trends' && (
+            <div className="space-y-6">
+              {/* Payment Status Chart */}
+              {data?.paymentsByStatus && data.paymentsByStatus.length > 0 && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Customer Status</h3>
-                  <div className="space-y-3">
-                    {data.statusCounts.map((item) => (
-                      <div key={item._id} className="flex justify-between">
-                        <span className="text-sm text-gray-600 capitalize">{item._id}</span>
-                        <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                      </div>
-                    ))}
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Status Overview</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="h-64">
+                      <Pie
+                        data={{
+                          labels: data.paymentsByStatus.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1)),
+                          datasets: [{
+                            data: data.paymentsByStatus.map(item => item.count),
+                            backgroundColor: [
+                              'rgba(34, 197, 94, 0.8)',
+                              'rgba(251, 191, 36, 0.8)',
+                              'rgba(239, 68, 68, 0.8)',
+                            ],
+                            borderColor: [
+                              'rgb(34, 197, 94)',
+                              'rgb(251, 191, 36)',
+                              'rgb(239, 68, 68)',
+                            ],
+                            borderWidth: 2,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              position: 'bottom' as const,
+                            },
+                            title: {
+                              display: true,
+                              text: 'Payment Count by Status'
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="h-64">
+                      <Bar
+                        data={{
+                          labels: data.paymentsByStatus.map(item => item._id.charAt(0).toUpperCase() + item._id.slice(1)),
+                          datasets: [{
+                            label: 'Amount (৳)',
+                            data: data.paymentsByStatus.map(item => item.amount),
+                            backgroundColor: [
+                              'rgba(34, 197, 94, 0.8)',
+                              'rgba(251, 191, 36, 0.8)',
+                              'rgba(239, 68, 68, 0.8)',
+                            ],
+                            borderColor: [
+                              'rgb(34, 197, 94)',
+                              'rgb(251, 191, 36)',
+                              'rgb(239, 68, 68)',
+                            ],
+                            borderWidth: 2,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: {
+                              display: false,
+                            },
+                            title: {
+                              display: true,
+                              text: 'Amount by Status'
+                            }
+                          },
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              ticks: {
+                                callback: function(value) {
+                                  return '৳' + value.toLocaleString();
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
-              {data?.planCounts && (
+              {/* Daily Payment Trends */}
+              {data?.dailyPayments && data.dailyPayments.length > 0 && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Customers by Plan</h3>
-                  <div className="space-y-3">
-                    {data.planCounts.map((item) => (
-                      <div key={item._id} className="flex justify-between">
-                        <span className="text-sm text-gray-600">{item._id}</span>
-                        <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                      </div>
-                    ))}
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Daily Payment Trends</h3>
+                  <div className="h-80">
+                    <Line
+                      data={{
+                        labels: data.dailyPayments.map(item => 
+                          new Date(item._id).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })
+                        ),
+                        datasets: [
+                          {
+                            label: 'Payment Count',
+                            data: data.dailyPayments.map(item => item.count),
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            yAxisID: 'y',
+                          },
+                          {
+                            label: 'Payment Amount (৳)',
+                            data: data.dailyPayments.map(item => item.amount),
+                            borderColor: 'rgb(45, 212, 191)',
+                            backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                            yAxisID: 'y1',
+                          }
+                        ]
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                          mode: 'index' as const,
+                          intersect: false,
+                        },
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          },
+                        },
+                        scales: {
+                          x: {
+                            display: true,
+                            title: {
+                              display: true,
+                              text: 'Date'
+                            }
+                          },
+                          y: {
+                            type: 'linear' as const,
+                            display: true,
+                            position: 'left' as const,
+                            title: {
+                              display: true,
+                              text: 'Payment Count'
+                            }
+                          },
+                          y1: {
+                            type: 'linear' as const,
+                            display: true,
+                            position: 'right' as const,
+                            title: {
+                              display: true,
+                              text: 'Amount (৳)'
+                            },
+                            grid: {
+                              drawOnChartArea: false,
+                            },
+                            ticks: {
+                              callback: function(value) {
+                                return '৳' + value.toLocaleString();
+                              }
+                            }
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Status Table */}
+              {data?.paymentsByStatus && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Payment Summary</h3>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Count</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Amount</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Average</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {data.paymentsByStatus.map((item) => (
+                          <tr key={item._id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                                  item._id === 'paid'
+                                    ? 'bg-green-100 text-green-800'
+                                    : item._id === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {item._id}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{item.count}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                              {formatCurrency(item.amount)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatCurrency(Math.round(item.amount / item.count))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

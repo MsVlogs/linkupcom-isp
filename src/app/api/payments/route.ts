@@ -13,6 +13,7 @@ const paymentSchema = z.object({
   status: z.enum(['paid', 'pending', 'overdue']),
   billingMonth: z.string().min(1, 'Billing month is required'),
   paymentMethod: z.enum(['cash', 'mobile_banking', 'bank_transfer']).default('cash'),
+  paymentDate: z.string().min(1, 'Payment date is required'),
   notes: z.string().optional(),
 });
 
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
       dueDate,
       collectedBy: session.user.id,
       collectedByName: session.user.name,
-      paidAt: validatedData.status === 'paid' ? new Date() : undefined,
+      paidAt: validatedData.status === 'paid' ? new Date(validatedData.paymentDate) : undefined,
     };
 
     const payment = await Payment.create(paymentData);

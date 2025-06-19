@@ -29,7 +29,18 @@ export async function GET(
 
     await connectDB();
 
-    const customer = await Customer.findById(id);
+    // Try to find by MongoDB _id first, then by customerId
+    let customer;
+    
+    // Check if the id looks like a MongoDB ObjectId (24 hex chars)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      customer = await Customer.findById(id);
+    }
+    
+    // If not found by _id or not a valid ObjectId, try by customerId
+    if (!customer) {
+      customer = await Customer.findOne({ customerId: id });
+    }
 
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
@@ -61,13 +72,26 @@ export async function PUT(
 
     await connectDB();
 
-    const customer = await Customer.findById(id);
+    // Try to find by MongoDB _id first, then by customerId
+    let customer;
+    
+    // Check if the id looks like a MongoDB ObjectId (24 hex chars)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      customer = await Customer.findById(id);
+    }
+    
+    // If not found by _id or not a valid ObjectId, try by customerId
+    if (!customer) {
+      customer = await Customer.findOne({ customerId: id });
+    }
+
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
+    // Update using the actual MongoDB _id
     const updatedCustomer = await Customer.findByIdAndUpdate(
-      id,
+      customer._id,
       validatedData,
       { new: true }
     );
@@ -115,12 +139,25 @@ export async function DELETE(
 
     await connectDB();
 
-    const customer = await Customer.findById(id);
+    // Try to find by MongoDB _id first, then by customerId
+    let customer;
+    
+    // Check if the id looks like a MongoDB ObjectId (24 hex chars)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      customer = await Customer.findById(id);
+    }
+    
+    // If not found by _id or not a valid ObjectId, try by customerId
+    if (!customer) {
+      customer = await Customer.findOne({ customerId: id });
+    }
+
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    await Customer.findByIdAndDelete(id);
+    // Delete using the actual MongoDB _id
+    await Customer.findByIdAndDelete(customer._id);
 
     // Log the action
     await createLog({

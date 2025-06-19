@@ -33,9 +33,24 @@ export function formatDateTime(date: Date | string): string {
 
 export function getCurrentBillingMonth(): string {
   const now = new Date();
-  const year = now.getFullYear();
+  const year = now.getFullYear(); 
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
+}
+
+export function getCurrentBillingMonthDisplay(): string {
+  const now = new Date();
+  const year = now.getFullYear(); 
+  const month = now.toLocaleString('default', { month: 'long' });
+  return `${month} ${year}`;
+}
+
+export function getTodaysDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function getNextBillingMonth(): string {

@@ -199,14 +199,37 @@ export default function CustomerForm({ customer, isEditing = false }: CustomerFo
                 <select
                   id="package"
                   value={formData.package}
-                  onChange={(e) => handleChange('package', e.target.value)}
+                  onChange={(e) => {
+                    const selectedPackage = e.target.value;
+                    handleChange('package', selectedPackage);
+                    
+                    // Auto-update monthly fee based on package selection
+                    const packagePrices: Record<string, number> = {
+                      'Basic': 500,
+                      'Bronze': 600,
+                      'Silver': 700,
+                      'Gold': 800,
+                      'Platinum': 900,
+                      'Platinum Plus': 1000,
+                      'Diamond': 1200,
+                      'Titanium': 1500,
+                    };
+                    
+                    if (selectedPackage && packagePrices[selectedPackage]) {
+                      handleChange('monthlyFee', packagePrices[selectedPackage]);
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
                   <option value="">Select Package</option>
-                  <option value="Basic 10 Mbps">Basic 10 Mbps</option>
-                  <option value="Standard 20 Mbps">Standard 20 Mbps</option>
-                  <option value="Premium 50 Mbps">Premium 50 Mbps</option>
-                  <option value="Ultra 100 Mbps">Ultra 100 Mbps</option>
+                  <option value="Basic">Basic - 5 Mbps (৳500) - Smooth browsing, unlimited entertainment</option>
+                  <option value="Bronze">Bronze - 10 Mbps (৳600) - Bufferless Facebook & YouTube, 24x7 support</option>
+                  <option value="Silver">Silver - 15 Mbps (৳700) - Multiple devices, HD streaming</option>
+                  <option value="Gold">Gold - 20 Mbps (৳800) - Heavy usage, seamless entertainment</option>
+                  <option value="Platinum">Platinum - 25 Mbps (৳900) - Premium experience, multiple streams</option>
+                  <option value="Platinum Plus">Platinum Plus - 30 Mbps (৳1000) - Ultra-fast, professional use</option>
+                  <option value="Diamond">Diamond - 35 Mbps (৳1200) - Enterprise level, content creation</option>
+                  <option value="Titanium">Titanium - 40 Mbps (৳1500) - Maximum speed, premium support</option>
                 </select>
                 {errors.package && (
                   <p className="mt-1 text-sm text-red-600">{errors.package}</p>

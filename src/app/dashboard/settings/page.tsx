@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { z } from 'zod';
+import Image from 'next/image';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -142,8 +143,15 @@ export default function SettingsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/dashboard" className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
+              <Link href="/dashboard" className="flex items-center mr-3">
+                <Image
+                  src="/logo1.png"
+                  alt="Linkup Communications"
+                  width={300}
+                  height={138}
+                  className="h-8 w-auto"
+                  unoptimized
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Settings</h1>

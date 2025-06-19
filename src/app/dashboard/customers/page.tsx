@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Customer } from '@/types';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import Image from 'next/image';
 
 interface CustomersResponse {
   customers: Customer[];
@@ -102,8 +103,15 @@ export default function CustomersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/dashboard" className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
+              <Link href="/dashboard" className="flex items-center mr-3">
+                <Image
+                  src="/logo1.png"
+                  alt="Linkup Communications"
+                  width={300}
+                  height={138}
+                  className="h-8 w-auto"
+                  unoptimized
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Customers</h1>

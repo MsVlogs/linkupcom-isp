@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/db';
+import connectDB from '@/lib/db';
 import { Customer } from '@/models/Customer';
 import { Payment } from '@/models/Payment';
 
@@ -33,7 +33,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
@@ -64,14 +64,13 @@ export async function GET(
 
       case 'payments':
         const payments = await Payment.find(Object.keys(dateFilter).length ? { createdAt: dateFilter } : {})
-          .populate('customerId', 'name customerCode')
           .populate('collectedBy', 'name')
           .lean();
         
-        const paymentHeaders = ['customerCode', 'customerName', 'amount', 'billingMonth', 'status', 'collectedBy', 'createdAt'];
+        const paymentHeaders = ['customerId', 'customerName', 'amount', 'billingMonth', 'status', 'collectedBy', 'createdAt'];
         csvData = formatCSV(payments.map(p => ({
-          customerCode: (p.customerId as { customerCode?: string })?.customerCode || '',
-          customerName: (p.customerId as { name?: string })?.name || '',
+          customerId: p.customerId,
+          customerName: p.customerName,
           amount: p.amount,
           billingMonth: p.billingMonth,
           status: p.status,

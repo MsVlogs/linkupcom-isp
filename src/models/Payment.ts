@@ -4,7 +4,6 @@ const paymentSchema = new mongoose.Schema({
   customerId: {
     type: String,
     required: true,
-    ref: 'Customer',
   },
   customerName: {
     type: String,

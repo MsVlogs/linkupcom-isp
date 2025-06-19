@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/db';
+import connectDB from '@/lib/db';
 import { User } from '@/models/User';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
 
     const staff = await User.findById(id).select('-password').lean();
     
@@ -57,7 +57,7 @@ export async function PUT(
     const body = await request.json();
     const validatedData = updateStaffSchema.parse(body);
 
-    await dbConnect();
+    await connectDB();
 
     const staff = await User.findById(id);
     if (!staff) {
@@ -120,7 +120,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
 
     // Prevent deleting self
     if (id === session.user.id) {

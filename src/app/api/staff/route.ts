@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/db';
+import connectDB from '@/lib/db';
 import { User } from '@/models/User';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createStaffSchema.parse(body);
 
-    await dbConnect();
+    await connectDB();
 
     // Check if email already exists
     const existingUser = await User.findOne({ email: validatedData.email });

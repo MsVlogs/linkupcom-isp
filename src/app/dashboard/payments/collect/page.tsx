@@ -1,23 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Customer } from '@/types';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Customer, PaymentFormData } from '@/types';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
-import { formatCurrency, getCurrentBillingMonth } from '@/lib/utils';
+import { formatCurrency, getCurrentBillingMonth, getTodaysDate } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const paymentSchema = z.object({
   customerId: z.string().min(1, 'Customer is required'),
   amount: z.number().min(1, 'Amount must be greater than 0'),
+  status: z.enum(['paid', 'pending', 'overdue']).default('paid'),
   billingMonth: z.string().min(1, 'Billing month is required'),
+  paymentMethod: z.enum(['cash', 'mobile_banking', 'bank_transfer']).default('cash'),
+  paymentDate: z.string().min(1, 'Payment date is required'),
   notes: z.string().optional(),
 });
-
-type PaymentFormData = z.infer<typeof paymentSchema>;
 
 interface CustomersResponse {
   customers: Customer[];
@@ -43,6 +45,14 @@ async function fetchCustomers(search: string): Promise<CustomersResponse> {
   return response.json();
 }
 
+async function fetchCustomerById(id: string): Promise<Customer> {
+  const response = await fetch(`/api/customers/${id}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch customer');
+  }
+  return response.json();
+}
+
 async function createPayment(data: PaymentFormData): Promise<void> {
   const response = await fetch('/api/payments', {
     method: 'POST',
@@ -57,9 +67,10 @@ async function createPayment(data: PaymentFormData): Promise<void> {
   }
 }
 
-export default function CollectPaymentPage() {
+function CollectPaymentContent() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [customerSearch, setCustomerSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -67,10 +78,35 @@ export default function CollectPaymentPage() {
   const [formData, setFormData] = useState<PaymentFormData>({
     customerId: '',
     amount: 0,
+    status: 'paid' as const,
     billingMonth: getCurrentBillingMonth(),
+    paymentMethod: 'cash' as const,
+    paymentDate: getTodaysDate(),
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Get customer ID from URL parameters
+  const preSelectedCustomerId = searchParams.get('customerId');
+
+  // Fetch customer data if coming from customer details page
+  const { data: preSelectedCustomer } = useQuery({
+    queryKey: ['customer', preSelectedCustomerId],
+    queryFn: () => fetchCustomerById(preSelectedCustomerId!),
+    enabled: !!preSelectedCustomerId && !selectedCustomer,
+  });
+
+  // Auto-select customer if coming from customer details page
+  useEffect(() => {
+    if (preSelectedCustomer && !selectedCustomer) {
+      setSelectedCustomer(preSelectedCustomer);
+      setFormData(prev => ({
+        ...prev,
+        customerId: preSelectedCustomer.customerId, // Use customerId (like "LC-001") not _id
+        amount: preSelectedCustomer.monthlyFee,
+      }));
+    }
+  }, [preSelectedCustomer, selectedCustomer]);
 
   const { data: customersData, isLoading } = useQuery({
     queryKey: ['customers-search', customerSearch],
@@ -94,7 +130,7 @@ export default function CollectPaymentPage() {
     setSelectedCustomer(customer);
     setFormData(prev => ({
       ...prev,
-      customerId: customer._id,
+      customerId: customer.customerId, // Use customerId (like "LC-001") not _id
       amount: customer.monthlyFee,
     }));
     setCustomerSearch('');
@@ -135,27 +171,58 @@ export default function CollectPaymentPage() {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-6 space-y-4 sm:space-y-0">
             <div className="flex items-center">
-              <Link href="/dashboard" className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
+              <Link href="/dashboard" className="flex items-center mr-3">
+                <Image
+                  src="/logo1.png"
+                  alt="Linkup Communications"
+                  width={300}
+                  height={138}
+                  className="h-8 w-auto"
+                  unoptimized
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Collect Payment</h1>
                 <p className="text-sm text-gray-600">Record a new payment from customer</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/dashboard"
                 className="text-gray-500 hover:text-gray-700 text-sm font-medium"
               >
                 ← Back to Dashboard
               </Link>
+              {preSelectedCustomerId && (
+                <Link
+                  href={`/dashboard/customers/${preSelectedCustomerId}`}
+                  className="text-teal-600 hover:text-teal-700 text-sm font-medium"
+                >
+                  ← Back to Customer Details
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Pre-selected Customer Notification */}
+      {preSelectedCustomerId && (
+        <div className="bg-teal-50 border-b border-teal-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-teal-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-teal-800">
+                <span className="font-medium">Customer Pre-selected:</span> Payment form has been auto-filled from customer details
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -165,6 +232,11 @@ export default function CollectPaymentPage() {
             <div>
               <label htmlFor="customerSearch" className="block text-sm font-medium text-gray-700 mb-2">
                 Search Customer *
+                {preSelectedCustomerId && (
+                  <span className="ml-2 text-sm text-teal-600 font-normal">
+                    (Auto-filled from customer details)
+                  </span>
+                )}
               </label>
               <div className="relative">
                 <input
@@ -253,17 +325,53 @@ export default function CollectPaymentPage() {
                 )}
               </div>
 
+              {/* Payment Method */}
+              <div>
+                <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method *
+                </label>
+                <select
+                  id="paymentMethod"
+                  value={formData.paymentMethod}
+                  onChange={(e) => handleChange('paymentMethod', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="mobile_banking">Mobile Banking</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                </select>
+                {errors.paymentMethod && (
+                  <p className="mt-1 text-sm text-red-600">{errors.paymentMethod}</p>
+                )}
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label htmlFor="paymentDate" className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Date *
+                </label>
+                <input
+                  type="date"
+                  id="paymentDate"
+                  value={formData.paymentDate}
+                  onChange={(e) => handleChange('paymentDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {errors.paymentDate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.paymentDate}</p>
+                )}
+              </div>
+
               {/* Billing Month */}
               <div>
                 <label htmlFor="billingMonth" className="block text-sm font-medium text-gray-700 mb-2">
                   Billing Month *
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   id="billingMonth"
                   value={formData.billingMonth}
                   onChange={(e) => handleChange('billingMonth', e.target.value)}
-                  placeholder="e.g., January 2024"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
                 {errors.billingMonth && (
@@ -307,5 +415,17 @@ export default function CollectPaymentPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CollectPaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-teal-600"></div>
+      </div>
+    }>
+      <CollectPaymentContent />
+    </Suspense>
   );
 }

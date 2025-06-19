@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import dbConnect from '@/lib/db';
+import connectDB from '@/lib/db';
 import { Customer } from '@/models/Customer';
 import { Payment } from '@/models/Payment';
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await dbConnect();
+    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const reportType = searchParams.get('type') || 'overview';
@@ -76,7 +76,6 @@ async function getOverviewReport(dateFilter: DateFilter) {
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]),
     Payment.find(createdAtFilter)
-      .populate('customerId', 'name customerCode')
       .populate('collectedBy', 'name')
       .sort({ createdAt: -1 })
       .limit(10)

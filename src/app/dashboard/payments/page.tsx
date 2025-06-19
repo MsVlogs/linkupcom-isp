@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Payment } from '@/types';
 import Link from 'next/link';
 import { formatCurrency } from '@/lib/utils';
+import Image from 'next/image';
 
 interface PaymentsResponse {
   payments: Payment[];
@@ -82,8 +83,15 @@ export default function PaymentsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/dashboard" className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                <span className="text-white font-bold text-sm">LC</span>
+              <Link href="/dashboard" className="flex items-center mr-3">
+                <Image
+                  src="/logo1.png"
+                  alt="Linkup Communications"
+                  width={300}
+                  height={138}
+                  className="h-8 w-auto"
+                  unoptimized
+                />
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
@@ -209,6 +217,9 @@ export default function PaymentsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -242,11 +253,27 @@ export default function PaymentsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{payment.collectedBy}</div>
+                      <div className="text-sm text-gray-900">{payment.collectedByName || 'Unknown'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {new Date(payment.createdAt).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/dashboard/payments/${payment._id}`}
+                          className="text-teal-600 hover:text-teal-900"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/dashboard/payments/${payment._id}/edit`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Edit
+                        </Link>
                       </div>
                     </td>
                   </tr>
