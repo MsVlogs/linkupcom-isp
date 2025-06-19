@@ -87,7 +87,6 @@ export default function ViewPaymentPage() {
                   width={300}
                   height={138}
                   className="h-8 w-auto"
-                  unoptimized
                 />
               </Link>
               <div>

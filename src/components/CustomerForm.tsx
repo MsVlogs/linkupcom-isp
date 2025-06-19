@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
@@ -38,6 +38,30 @@ export default function CustomerForm({ customer, isEditing = false }: CustomerFo
     area: customer?.area || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoadingNextId, setIsLoadingNextId] = useState(false);
+
+  // Auto-generate customer ID for new customers
+  useEffect(() => {
+    if (!isEditing && !customer) {
+      const fetchNextCustomerId = async () => {
+        setIsLoadingNextId(true);
+        try {
+          const response = await fetch('/api/customers/next-id');
+          if (response.ok) {
+            const data = await response.json();
+            setFormData(prev => ({ ...prev, customerId: data.nextId }));
+          }
+        } catch (error) {
+          console.error('Error fetching next customer ID:', error);
+          toast.error('Could not generate customer ID');
+        } finally {
+          setIsLoadingNextId(false);
+        }
+      };
+
+      fetchNextCustomerId();
+    }
+  }, [isEditing, customer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,18 +149,31 @@ export default function CustomerForm({ customer, isEditing = false }: CustomerFo
               {/* Customer ID */}
               <div>
                 <label htmlFor="customerId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer ID *
+                  Customer ID * {!isEditing && <span className="text-xs text-gray-500">(Auto-generated)</span>}
                 </label>
-                <input
-                  type="text"
-                  id="customerId"
-                  value={formData.customerId}
-                  onChange={(e) => handleChange('customerId', e.target.value)}
-                  disabled={isEditing} // Don't allow editing customer ID
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-50"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="customerId"
+                    value={formData.customerId}
+                    onChange={(e) => handleChange('customerId', e.target.value)}
+                    disabled={isEditing || isLoadingNextId} // Don't allow editing customer ID or while loading
+                    placeholder={isLoadingNextId ? "Generating ID..." : "Customer ID"}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-50"
+                  />
+                  {isLoadingNextId && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
+                    </div>
+                  )}
+                </div>
                 {errors.customerId && (
                   <p className="mt-1 text-sm text-red-600">{errors.customerId}</p>
+                )}
+                {!isEditing && !isLoadingNextId && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    ID is automatically generated based on the latest customer
+                  </p>
                 )}
               </div>
 

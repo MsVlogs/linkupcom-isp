@@ -61,7 +61,6 @@ export default function DashboardPage() {
                 height={138}
                 className="h-8 w-auto mr-3"
                 priority
-                unoptimized
               />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>

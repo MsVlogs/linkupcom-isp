@@ -36,7 +36,6 @@ export default function Header({
                 width={300}
                 height={138}
                 className="h-8 w-auto mr-3"
-                unoptimized
               />
             </Link>
             

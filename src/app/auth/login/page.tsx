@@ -77,7 +77,6 @@ export default function LoginPage() {
             height={138}
             className="h-24 w-auto"
             priority
-            unoptimized
           />
         </div>
         <p className="mt-4 text-center text-sm text-gray-600">
