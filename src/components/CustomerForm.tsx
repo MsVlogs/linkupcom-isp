@@ -10,7 +10,9 @@ const customerSchema = z.object({
   customerId: z.string().min(1, 'Customer ID is required'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
   address: z.string().min(5, 'Address must be at least 5 characters'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  phone: z.string().min(1, 'Phone number is required'),
+  pppoeUsername: z.string().optional(),
+  onuId: z.string().optional(),
   package: z.string().min(1, 'Package is required'),
   monthlyFee: z.number().min(1, 'Monthly fee must be greater than 0'),
   status: z.enum(['active', 'inactive']),
@@ -32,6 +34,8 @@ export default function CustomerForm({ customer, isEditing = false }: CustomerFo
     name: customer?.name || '',
     address: customer?.address || '',
     phone: customer?.phone || '',
+    pppoeUsername: customer?.pppoeUsername || '',
+    onuId: customer?.onuId || '',
     package: customer?.package || '',
     monthlyFee: customer?.monthlyFee || 0,
     status: customer?.status || 'active',
@@ -209,6 +213,34 @@ export default function CustomerForm({ customer, isEditing = false }: CustomerFo
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                 )}
+              </div>
+
+              {/* Network identifiers */}
+              <div>
+                <label htmlFor="pppoeUsername" className="block text-sm font-medium text-gray-700 mb-2">
+                  PPPoE Username
+                </label>
+                <input
+                  type="text"
+                  id="pppoeUsername"
+                  value={formData.pppoeUsername}
+                  onChange={(e) => handleChange('pppoeUsername', e.target.value)}
+                  placeholder="Used for read-only MikroTik live status"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="onuId" className="block text-sm font-medium text-gray-700 mb-2">
+                  ONU ID / Serial
+                </label>
+                <input
+                  type="text"
+                  id="onuId"
+                  value={formData.onuId}
+                  onChange={(e) => handleChange('onuId', e.target.value)}
+                  placeholder="Used for read-only OLT/ONU status"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
               </div>
 
               {/* Area */}
