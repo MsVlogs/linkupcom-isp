@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Customer, Payment } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import AiEngineer from '@/components/AiEngineer';
 
 export default function ViewCustomerPage() {
   const params = useParams();
@@ -174,6 +175,8 @@ export default function ViewCustomerPage() {
             </div>
           </div>
         </div>
+
+        <AiEngineer customerId={customer._id} customerName={customer.name} />
 
         {/* Payment History */}
         <div className="bg-white rounded-lg border border-gray-200 mt-6">
