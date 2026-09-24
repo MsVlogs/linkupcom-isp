@@ -14,6 +14,8 @@ export interface Customer {
   name: string;
   address: string;
   phone: string;
+  pppoeUsername?: string;
+  onuId?: string;
   package: string;
   monthlyFee: number;
   status: 'active' | 'inactive';
