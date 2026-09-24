@@ -14,6 +14,8 @@ const customerSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  pppoeUsername: { type: String, trim: true },
+  onuId: { type: String, trim: true },
   phone: {
     type: String,
     required: true,
