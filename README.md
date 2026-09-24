@@ -201,6 +201,55 @@ JWT_SECRET=your-production-jwt-secret
 - **Multi-language**: Bengali language support
 - **Offline Support**: PWA capabilities for offline access
 
+## 🔎 BengalStack AI Engineer — Read-only Live Telemetry
+
+The customer AI Engineer can query live network telemetry without making configuration changes.
+
+### MikroTik RouterOS REST
+
+Configure a read-only RouterOS API account and set:
+
+```env
+MIKROTIK_REST_URL=https://ROUTER-IP
+MIKROTIK_REST_USERNAME=readonly-user
+MIKROTIK_REST_PASSWORD=change-me
+MIKROTIK_TLS_VERIFY=true
+```
+
+The adapter reads the RouterOS `/rest/ppp/active` endpoint and matches the customer's **PPPoE Username**. It never calls RouterOS write endpoints.
+
+### OLT / ONU telemetry gateway
+
+Because Huawei, ZTE, BDCOM, VSOL, HSGQ, C-DATA and other OLT vendors expose different APIs/OIDs, the app uses a read-only gateway contract rather than guessing vendor-specific commands:
+
+```env
+OLT_TELEMETRY_URL=https://your-readonly-olt-gateway
+OLT_TELEMETRY_TOKEN=change-me
+```
+
+The app requests `GET /onu/status?onuId=<ONU_ID>` and expects JSON such as:
+
+```json
+{
+  "online": true,
+  "onuRegistered": true,
+  "opticalRx": "-18.4",
+  "opticalTx": "2.1",
+  "lastSeen": "2026-09-25T00:00:00Z",
+  "detail": "ONU registered"
+}
+```
+
+The gateway must itself use read-only SNMP/SSH/API access. No provisioning, reboot, disable, delete, or configuration operation is performed by the billing app.
+
+### Customer mapping
+
+Each customer can now store:
+- **PPPoE Username** — used for live MikroTik session lookup.
+- **ONU ID / Serial** — used for live OLT/ONU lookup.
+
+If these identifiers or telemetry credentials are missing, AI Engineer reports that live telemetry is unavailable instead of inventing a status.
+
 ## 📄 License
 
 This project is licensed under the MIT License.
