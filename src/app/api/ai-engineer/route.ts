@@ -6,6 +6,7 @@ import { Customer } from '@/models/Customer';
 import { Payment } from '@/models/Payment';
 import { createLog } from '@/lib/logger';
 import { z } from 'zod';
+import { getCustomerTelemetry } from '@/lib/telemetry';
 
 const requestSchema = z.object({
   customerId: z.string().min(1),
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
       .lean();
 
     const findings: Finding[] = [];
+    const telemetry = await getCustomerTelemetry(customer);
     const question = body.question.toLowerCase();
 
     if (customer.status !== 'active') {
@@ -73,13 +75,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    findings.push({
-      level: 'info',
-      title: 'Network-device telemetry',
-      detail: 'No live MikroTik/OLT/ONU telemetry is currently connected to this read-only diagnostic endpoint, so it will not claim PPPoE, optical, MAC, or device reachability facts that it cannot verify.',
-    });
+    for (const finding of telemetry.findings) {
+      findings.push({
+        level: finding.level,
+        title: finding.title,
+        detail: finding.detail,
+      });
+    }
+    for (const error of telemetry.errors) {
+      findings.push({
+        level: 'warning',
+        title: 'Telemetry unavailable',
+        detail: error,
+      });
+    }
 
-    let summary = 'The customer record is active, but live network telemetry is not available from this application, so the exact offline cause cannot yet be confirmed.';
+    let summary = telemetry.live
+      ? 'Live network telemetry was checked. The findings below reflect the current read-only device checks.'
+      : 'The customer record is available, but no live network telemetry provider is configured for this customer.';
+
+    if (telemetry.pppoe && !telemetry.pppoe.active && customer.status === 'active') {
+      summary = 'The customer account is active, but the live MikroTik check shows no active PPPoE session. Check the customer device/ONT and access path next.';
+    }
+    if (telemetry.olt?.online === false) {
+      summary = 'Live OLT/ONU telemetry reports the customer ONU path as offline. Verify optical/access-side conditions before changing anything.';
+    }
     if (customer.status !== 'active') {
       summary = `The customer is marked "${customer.status}" in billing. That is the first account-level condition to verify before diagnosing a network outage.`;
     } else if (overdue.length) {
@@ -119,7 +139,8 @@ export async function POST(request: NextRequest) {
         'If applicable, check OLT/ONU registration, optical alarms and ONU MAC.',
         'Check for an area/device-wide outage affecting other customers.',
       ],
-      disclaimer: 'Diagnostic only: this assistant does not change configuration, reboot devices, disable services, delete records, or provision customers.',
+      telemetry,
+      disclaimer: 'Diagnostic only: live telemetry is read-only. This assistant does not change configuration, reboot devices, disable services, delete records, or provision customers.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
