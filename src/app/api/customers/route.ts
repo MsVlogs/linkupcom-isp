@@ -11,6 +11,8 @@ const customerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   address: z.string().min(1, 'Address is required'),
   phone: z.string().min(1, 'Phone is required'),
+  pppoeUsername: z.string().trim().optional(),
+  onuId: z.string().trim().optional(),
   package: z.string().min(1, 'Package is required'),
   monthlyFee: z.number().positive('Monthly fee must be positive'),
   area: z.string().min(1, 'Area is required'),
