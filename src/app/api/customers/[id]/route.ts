@@ -10,6 +10,8 @@ const customerUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required').optional(),
   address: z.string().min(1, 'Address is required').optional(),
   phone: z.string().min(1, 'Phone is required').optional(),
+  pppoeUsername: z.string().trim().optional(),
+  onuId: z.string().trim().optional(),
   package: z.string().min(1, 'Package is required').optional(),
   monthlyFee: z.number().positive('Monthly fee must be positive').optional(),
   area: z.string().min(1, 'Area is required').optional(),
